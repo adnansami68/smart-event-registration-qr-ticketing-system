@@ -27,14 +27,33 @@ def load_user(user_id):
 
 def create_app(test_config=None):
     is_vercel = Config.IS_VERCEL
+
+    # Use an absolute path for Flask templates.
+    package_dir = Path(__file__).resolve().parent
+    templates_dir = package_dir / "templates"
+
     if is_vercel:
-        # Vercel's deployment filesystem is read-only; /tmp is writable but
-        # ephemeral. Persistent application records and PDFs live in Postgres.
-        instance_dir = Path(os.getenv("EVENTPASS_INSTANCE_DIR", "/tmp/eventpass-instance"))
+        # Vercel filesystem is read-only except /tmp.
+        instance_dir = Path(
+            os.getenv(
+                "EVENTPASS_INSTANCE_DIR",
+                "/tmp/eventpass-instance"
+            )
+        )
         instance_dir.mkdir(parents=True, exist_ok=True)
-        app = Flask(__name__, instance_relative_config=True, instance_path=str(instance_dir))
+
+        app = Flask(
+            __name__,
+            template_folder=str(templates_dir),
+            instance_relative_config=True,
+            instance_path=str(instance_dir),
+        )
     else:
-        app = Flask(__name__, instance_relative_config=True)
+        app = Flask(
+            __name__,
+            template_folder=str(templates_dir),
+            instance_relative_config=True,
+        )
 
     app.config.from_object(Config)
     if test_config:
